@@ -9,20 +9,18 @@
 #ifndef STRUCTS_H_
 #define STRUCTS_H_
 
-/*
- * Zmienne używane w projekcie
- */
-const int numberOfChanels = 20; 								//liczba kanałów
-const int maxDemandSize = 5; 									//maksymalna liczba procesów w kolejce żądań
+#include <iostream>
+#include <mpi.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <vector>
+#include <stddef.h>
+#include <algorithm>
+#include <sstream>
 
-/*
- * Tagi używane w komunikacji
- */
-
-const int requestTag = numberOfChanels + 1; 					//wysyłanie
-const int dismisTag = numberOfChanels + 2;
-const int answerTag = numberOfChanels + 3;
-
+using namespace std;
 /*
  * Struktura opisująca kanał
  */
@@ -46,12 +44,30 @@ struct Request {
  * Struktura opisująca wiadomość
  */
 struct Msg {
-	int pidSend;												// id procesu wysyłającego
-	int pidRecv;												// id procesu wysyłającego
-	int clock;													//zegar skalarny
 	int channelNO;												//numer kanału który zwalniamy
+	int clock;													//zegar skalarny
 	int numberOfShips; 											// ile jest aktualnie w kanale
 	int direction;												// jaki kierunke (1 - do walki, 0 - spowrotem)
 };
+
+/*
+ * Stałe używane w projekcie
+ */
+const int NUMBERS_OF_CHANNELS = 1; 								//liczba kanałów
+const int MAX_DEMAND_SIZE = 5; 									//maksymalna liczba procesów w kolejce żądań
+
+const int SEARCHING_CANAL = 0;
+const int WAITING_FOR_ANSWERS = 1;
+const int WAITING_TO_BE_FIRST = 2;
+const int IN_CRITICAL_SECTION = 3;
+const int NOTHING_TO_DO = 4;
+
+/*
+ * Tagi używane w komunikacji
+ */
+
+const int REQUEST_TAG = NUMBERS_OF_CHANNELS + 1; 					//wysyłanie
+const int DISMIS_TAG = NUMBERS_OF_CHANNELS + 2;
+const int ANSWER_TAG = NUMBERS_OF_CHANNELS + 3;
 
 #endif /* STRUCTS_H_ */
