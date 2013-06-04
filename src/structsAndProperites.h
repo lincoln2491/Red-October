@@ -53,21 +53,23 @@ struct Msg {
 /*
  * Stałe używane w projekcie
  */
-const int NUMBERS_OF_CHANNELS = 1; 								//liczba kanałów
-const int MAX_DEMAND_SIZE = 5; 									//maksymalna liczba procesów w kolejce żądań
+const int NUMBERS_OF_CHANNELS = 10; 								//liczba kanałów
+const int MAX_DEMAND_SIZE = 5; 										//maksymalna liczba procesów w kolejce żądań
 
-const int SEARCHING_CANAL = 0;
-const int WAITING_FOR_ANSWERS = 1;
-const int WAITING_TO_BE_FIRST = 2;
-const int IN_CRITICAL_SECTION = 3;
-const int NOTHING_TO_DO = 4;
+/*
+ * Tryby pracy
+ */
+const int SEARCHING_CANAL = 0;										//szukanie kanału
+const int WAITING_FOR_ANSWERS = 1;									//czekanie na wszystkie odpowiedzi
+const int WAITING_TO_BE_FIRST = 2;									//czekanie na bycie pierwszym w kolejce żądań
+const int IN_CRITICAL_SECTION = 3;									//w sekcji krytycznej
 
 /*
  * Tagi używane w komunikacji
  */
 
-const int REQUEST_TAG = NUMBERS_OF_CHANNELS + 1; 					//wysyłanie
-const int DISMIS_TAG = NUMBERS_OF_CHANNELS + 2;
-const int ANSWER_TAG = NUMBERS_OF_CHANNELS + 3;
+const int REQUEST_TAG = NUMBERS_OF_CHANNELS + 1; 					//wysyłanie żądania sekcji
+const int DISMIS_TAG = NUMBERS_OF_CHANNELS + 2;						//wysyłanie zwolnienia sekcji
+const int ANSWER_TAG = NUMBERS_OF_CHANNELS + 3;						//wysyłanie odpowiedzi
 
 #endif /* STRUCTS_H_ */

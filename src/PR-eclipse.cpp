@@ -4,25 +4,25 @@ using namespace std;
  * Zmienne
  */
 
-MPI_Request mpiRequest;
-MPI_Status mpiStatus;
+MPI_Request mpiRequest;											//request
+MPI_Status mpiStatus;											//status
 
-ostringstream ss;
+ostringstream ss;												//strumień do konwertowania liczb na stringi
 
 int rank, size;													//numer procesu i ogólna liczba procesów
 int scalarClock;   												//zegar
 
 int mode;														//tryb działania propgramu
-int choosenChannel;
-int actualThinkingChanel;
-int direction;
-bool isGoingToChannel;
+int choosenChannel;												//wybrany kanal
+int actualThinkingChanel;										//pozycja na liscie preferencji aktualnie przemyślanego kanału
+int direction;													//jaki kierunke (1 - do walki, 0 - powrót)
+bool isGoingToChannel;											//zmienna oznaczająca, czy chcemy wejsc do kanału, czy wyjsc z niego
 
-int *stamps;													// lamport
-bool *isAnswer;													// lamport
+int *stamps;													// lamport - znaczniki czasowe
+bool *isAnswer;													// lamport - czy wszystkie kanały odpowiedziały
 
-vector<Request> demand[NUMBERS_OF_CHANNELS];								//kolejki żądań do każdej z stref krytycznych
-int listOfPreference[NUMBERS_OF_CHANNELS]; 											//tablica zawierająca preferencje kanałów
+vector<Request> demand[NUMBERS_OF_CHANNELS];					//kolejki żądań do każdej z stref krytycznych
+int listOfPreference[NUMBERS_OF_CHANNELS]; 						//tablica zawierająca preferencje kanałów
 Channel channels[NUMBERS_OF_CHANNELS];							//tablica zawierająca dane wszyskich kanałów
 
 /*
@@ -34,12 +34,15 @@ MPI_Datatype msg_types[4] = { MPI_INT, MPI_INT, MPI_INT, MPI_INT };
 MPI_Datatype MPI_MSG_TYPE;
 MPI_Aint msg_offsets[4];
 
+/*
+ * Dodaje żadanie do kolejki żądań
+ */
 void addDemand( Request aRequest ) {
 	int channel = aRequest.channelNO;
 	int pid = aRequest.pid;
 	int clock = aRequest.clock;
 	bool added = false;
-
+	//Sprawdza miejsce na liscie
 	for ( int i = 0; i < demand[channel].size(); i++ ) {
 		Request r = demand[channel][i];
 		if ( (r.clock < clock) || (r.clock == clock && r.pid < pid) ) {
@@ -55,7 +58,9 @@ void addDemand( Request aRequest ) {
 
 	}
 }
-
+/*
+ * Sprawdzanie wiadomosci typu request
+ */
 void checkRequest() {
 	int ms = 50;
 	usleep( ms * 1000 );
@@ -91,6 +96,9 @@ void checkRequest() {
 	}
 }
 
+/*
+ * Sprawdzanie wiadomosci typu dismis
+ */
 void checkDismis() {
 	int ms = 50;
 	usleep( ms * 1000 );
@@ -107,16 +115,6 @@ void checkDismis() {
 		channels[channel].numberOfShips = req.numberOfShips;
 
 		demand[channel].erase( demand[channel].begin() );
-//		for ( int i = 0; i < demand[channel].size(); i++ ) {
-//			Request actualRequest = demand[channel].at(i);
-//			if ( actualRequest.pid == mpiStatus.MPI_SOURCE ) {
-//				Request *r;
-//				r = demand[channel][i];
-//				//delete actualRequest;
-//
-//				break;
-//			}
-//		}
 		clearStringStream( ss );
 		ss << mpiStatus.MPI_SOURCE;
 		string log = "Prośba od " + ss.str() + " o zwolnienie kanału ";
@@ -127,6 +125,9 @@ void checkDismis() {
 	}
 }
 
+/*
+ * Sprawdzanie wiadomosci typu answer
+ */
 void checkAnswer() {
 	int ms = 50;
 	usleep( ms * 1000 );
@@ -196,7 +197,7 @@ void configure() {
 	srand( rank + 1 );
 	for ( int i = 0; i < NUMBERS_OF_CHANNELS; i++ ) {
 		swap( listOfPreference[i], listOfPreference[rand() % NUMBERS_OF_CHANNELS] );
-		channels[i].maxNumberOfShips = (10 * i) % 30;
+		channels[i].maxNumberOfShips = (10 * (i + 1)) % 30 + 5;
 		channels[i].direction = 0;
 		channels[i].numberOfShips = 0;
 	}
@@ -207,13 +208,9 @@ void configure() {
 		ss << listOfPreference[i];
 		log = log + ss.str() + " - ";
 	}
+	createLog( log, ss, rank, scalarClock );
 
-	//if ( rank == 4 ) {
 	mode = SEARCHING_CANAL;
-	//createLog( log, ss, rank, scalarClock );
-//	} else {
-//		mode = NOTHING_TO_DO;
-//	}
 
 	msg_offsets[0] = offsetof(Msg, channelNO);
 	msg_offsets[1] = offsetof(Msg, clock);
@@ -325,7 +322,6 @@ int main( int argc, char **argv ) {
 				isSucses = true;
 			}
 			printChannelStatus( choosenChannel, ss, channels[choosenChannel], rank, scalarClock );
-			mode = NOTHING_TO_DO;
 
 			Msg dismis;
 			dismis.channelNO = choosenChannel;
@@ -339,10 +335,7 @@ int main( int argc, char **argv ) {
 				}
 			}
 
-//			Request *r = demand[choosenChannel][0];
 			demand[choosenChannel].erase( demand[choosenChannel].begin() );
-
-			//delete r;
 
 			if ( isSucses ) {
 				if ( isGoingToChannel ) {
